@@ -1,0 +1,45 @@
+lsb_release -a # Show system distribution information
+
+Since CentOS 6.6 has default Python 2.6.6 installed and a lot of System-level applications depend on it. So we don't want to mess up with default Python interperator
+Theano requirement: Python >= 2.6 or >= 3.3
+Lasagne requirement: Python >= 2.7 or >= 3.4
+
+We could either choose 2.7 or 3.4. Thanks to my colleagues in Vision Group, we already have CUDA 7.0 and cuDNN 4 installed, this will save us a lot of time to configure the system
+
+Due to some compile problem with liblapack, when I tried to import numpy into Python 2.7, there is always some error with liblapack.so, I choose to go with Python 3.4
+
+cd /some/folder/
+wget https://www.python.org/ftp/python/3.4.4/Python-3.4.4.tgz
+cd Python-3.4.4
+./configure --enable-shared \
+            --prefix=/usr/local \
+            LDFLAGS="-Wl,--rpath=/usr/local/lib"
+# This configure is very important
+# --enable-shared will enable Theano to create some shared library with Python, otherwise you will get import error with Theano
+# LDFLAGS will point to libpython's correct path
+make altinstall
+# Important!! Install Python 3.4 without changing default Python
+# If you made some mistake, make clean to delete all files
+pip3.4 install --user numpy
+pip3.4 install --user scipy
+pip3.4 install --user --upgrade https://github.com/Theano/Theano/archive/master.zip
+pip3.4 install --user --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
+# --user will install libraries in your home directory, without interfere with others 
+Done!
+
+vim ~/.theanorc to configure your theano
+Example:
+[global]
+floatX = float32
+device = gpu
+
+Check your GPU with Theano
+
+import theano
+print(theano.sandbox.cuda.device_properties(0))
+# Information about your GPU
+
+
+from theano.sandbox.cuda.dnn import dnn_available as d
+print(d() or d.msg)
+# Expect True, means you have proper cuDNN installed
